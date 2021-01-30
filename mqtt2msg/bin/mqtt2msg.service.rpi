@@ -1,0 +1,11 @@
+[Unit]
+Description=MQTT based tool for monitoring and publishing messages
+
+[Service]
+User=pi
+Type=simple
+ExecStart=/home/pi/mqtt2msg.git/mqtt2msg/bin/start_mqtt2msg.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

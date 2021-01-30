@@ -1,0 +1,45 @@
+---
+
+knobs:
+    log_to_console: true
+    log_level_debug: true
+    # periodic_interval_refresh_publish: 600
+    # periodic_interval_expirations: 10
+    # periodic_interval_reelection: 5
+mqtt:
+    host: 192.168.2.238
+topics:
+    /laundry/motion:
+        msg: 'movement in laundry room'
+        priority: 1
+        expiration: 20
+    /garage/motion:
+        msg: 'movement in garage'
+        'on': [ 'on', 'enabled' ]
+        'off': 'disabled'
+    /test/event1:
+        # msg_topic: '/msg/ev1'
+        msg: 'test event one'
+        # priority: 10
+        # expiration: 30
+        'on': 'on'
+        'off': 'off'
+    /test/event2:
+        msg: 'test event two'
+        priority: 2
+        expiration: 11
+        on_high_water: 12
+        off_low_water: 10
+    /test/event3:
+        msg: 'event3'
+        'on': ['3', 'yay', 'yes']
+    /test/event4:
+        msg: 'event4'
+    /test/event5:
+        msg: 'event5'
+    /test/event6:
+        msg: 'event6'
+        msg_topic: '/msg/event6'
+        expiration: 10
+        'on': null
+        'off': ''

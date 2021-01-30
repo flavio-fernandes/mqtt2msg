@@ -1,0 +1,3 @@
+asyncio-mqtt
+paho-mqtt
+pyyaml>=3.11

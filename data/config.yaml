@@ -1,0 +1,29 @@
+---
+
+knobs:
+    # Note: normally you don't set these... here just to show how to
+    #       devel and debug
+    # log_to_console: false
+    # log_level_debug: false
+    # periodic_interval_refresh_publish: 600
+    # periodic_interval_expirations: 10
+    # periodic_interval_reelection: 5
+mqtt:
+    host: 192.168.1.250
+    # This is the topic that aggregates messages from topics below
+    message_topic: /msg
+topics:
+    /motion/garage:
+        msg: 'there is motion in the garage'
+        # the payload value in order to enqueue this message.
+        # can me a list. Use '' to override default, which is 'on'.
+        # So, 'on' is same as null, and not to be confused with ''.
+        # 'on': null
+        # number of seconds to wait until automatically expiring
+        expiration: 20
+        # the payload that triggers message to expire explicitly.
+        # kinda like 'on', but the opposite. :)
+        'off': ['off', 'gone fishing']
+        # low and high watermark float values that can be used as on/off
+        on_high_water: 66.6
+        off_low_water: -7

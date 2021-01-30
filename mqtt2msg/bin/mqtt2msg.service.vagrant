@@ -1,0 +1,11 @@
+[Unit]
+Description=MQTT based tool for monitoring and publishing messages
+
+[Service]
+User=vagrant
+Type=simple
+ExecStart=/vagrant/mqtt2msg/bin/start_mqtt2msg.sh /home/vagrant/mqtt2msg.config.yaml
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

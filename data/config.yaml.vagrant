@@ -1,0 +1,36 @@
+---
+
+mqtt:
+    host: 192.168.123.123
+    client_id: mqtttester
+knobs:
+    log_to_console: true
+    log_level_debug: false
+    periodic_interval_refresh_publish: 0
+    periodic_interval_expirations: 1
+    periodic_interval_reelection: 2
+topics:
+    /garage/motion:
+        msg: 'movement in garage'
+        priority: 1
+        'on': 'on'
+        'off': null
+    /laundry/motion:
+        msg: 'movement in laundry room'
+        expiration: 5
+        priority: 20
+        # 'on': 'on'
+    /attic/motion:
+        msg: 'movement in attic'
+        priority: 20
+        on_high_water: 12.7
+        off_low_water: 5
+        'on': 'up'
+        'off': ''
+    /bathroom:
+        msg: 'action in the bathroom'
+        msg_topic: '/restroom'
+        priority: 0
+        'on': ['yes', 'yeah', 'y', 'yay', 'go']
+        'off': ['no', 'nope', 'n', 'nay', 'halt', 'bye']
+
