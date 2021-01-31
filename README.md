@@ -56,9 +56,9 @@ $ MQTT=192.168.123.123 && \
 
 
 To have a notion of importance, you can use the
-[priority](https://github.com/flavio-fernandes/mqtt2msg/blob/df1b11268c58f5566e99b4c209b3c30dce481d69/data/config.yaml.vagrant#L21)
+[priority](https://github.com/flavio-fernandes/mqtt2msg/blob/fc331847044a0db3b4309a69c534fe16c73ffbb1/data/config.yaml.vagrant#L21)
 attribute. It is also possible to watch out for
-[high/low](https://github.com/flavio-fernandes/mqtt2msg/blob/df1b11268c58f5566e99b4c209b3c30dce481d69/data/config.yaml.vagrant#L26-L27)
+[high/low](https://github.com/flavio-fernandes/mqtt2msg/blob/fc331847044a0db3b4309a69c534fe16c73ffbb1/data/config.yaml.vagrant#L26-L27)
 watermark triggers for things like temperature.
 
 Take a look at [data/config.yaml.vagrant](https://github.com/flavio-fernandes/mqtt2msg/blob/master/data/config.yaml.vagrant)
@@ -68,5 +68,5 @@ a reference, together with
 [the test](https://github.com/flavio-fernandes/mqtt2msg/blob/master/mqtt2msg/tests/basic_test.sh.vagrant)
 that exercises that config.
 
-**NOTE:** Use python 3.9 or newer, as this project requires a somewhat
+**NOTE:** Use python 3.7 or newer, as this project requires a somewhat
 recent implementation of [asyncio](https://realpython.com/async-io-python/).
