@@ -33,4 +33,46 @@ topics:
         priority: 0
         'on': ['yes', 'yeah', 'y', 'yay', 'go']
         'off': ['no', 'nope', 'n', 'nay', 'halt', 'bye']
+    # topics for testing timestamps. These are silly and stupid
+    # in a real world scenario, but will let us test the logic
+    # as long as 1 hour has not gone by since the parser processed
+    # them and also as long as a new day begins. BE AWARE! 8o
+    /positive/on_enabled_before:
+        on_enabled_before: in 1 hour
+    /positive/on_enabled_after:
+        on_enabled_after: 1 second ago
+    /positive/on_enabled_between:
+        on_enabled_between: 1 second ago , in 1 hour
+    /positive/on_disabled_before:
+        on_disabled_before: 1 second ago
+    /positive/on_disabled_after:
+        on_disabled_after: in 1 hour
+    /positive/on_disabled_between:
+        on_disabled_between: 1 hour ago , now
+    /positive/combo_on_enabled:
+        on_enabled_before: in 1 hour
+        on_enabled_after: 1 second ago
+        on_enabled_between: 1 second ago , in 1 hour
+        on_disabled_before: 1 second ago
+        on_disabled_after: in 1 hour
+        on_disabled_between: 1 hour ago , now
+    /negative/on_enabled_before:
+        on_enabled_before: 1 second ago
+    /negative/on_enabled_after:
+        on_enabled_after: in 1 hour
+    /negative/on_enabled_between:
+        on_enabled_between: 1 hour ago, 1 second ago
+    /negative/on_disabled_before:
+        on_disabled_before: in 1 hour
+    /negative/on_disabled_after:
+        on_disabled_after: 1 second ago
+    /negative/on_disabled_between:
+        on_disabled_between: now, in 1 hour
+    /negative/combo_on_disabled:
+        on_enabled_before: 1 second ago
+        on_enabled_after: in 1 hour
+        on_enabled_between: 1 hour ago, 1 second ago
+        on_disabled_before: in 1 hour
+        on_disabled_after: 1 second ago
+        on_disabled_between: now, in 1 hour
 

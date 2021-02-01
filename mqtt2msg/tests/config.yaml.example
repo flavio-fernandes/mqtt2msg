@@ -1,0 +1,18 @@
+---
+
+knobs:
+    # Note: normally you don't set these... here just to show how to
+    #       devel and debug
+    log_to_console: true
+    log_level_debug: true
+    # periodic_interval_refresh_publish: 600
+    # periodic_interval_expirations: 10
+    # periodic_interval_reelection: 5
+mqtt:
+    host: 192.168.2.238
+    message_topic: /test/msg
+    client_id: test_mqtt2msg
+topics:
+    /test/event1:
+#        on_enabled_between: 1:00 pm, 1:15 pm
+        on_disabled_between: 3 pm, 3:01 pm

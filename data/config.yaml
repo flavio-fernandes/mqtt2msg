@@ -27,3 +27,12 @@ topics:
         # low and high watermark float values that can be used as on/off
         on_high_water: 66.6
         off_low_water: -7
+        # For time restrictions, use the following attributes. Their
+        # union will determine when 'on' events get accepted.
+        # note that these do not span a day. They only extract hh:mm:ss
+        #on_enabled_before: in 1 hour
+        #on_enabled_after: now
+        on_disabled_before: 9:00 am
+        on_disabled_after: 5:00:01 pm
+        #on_enabled_between: 9:00 am, 5 pm
+        #on_disabled_between: 12:00 am, 9:00 am

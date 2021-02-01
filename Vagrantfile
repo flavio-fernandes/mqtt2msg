@@ -46,6 +46,7 @@ SCRIPT
 
 $test_mqtt2msg = <<SCRIPT
 sudo systemctl status --full --no-pager mqtt2msg
+sleep 5  ; # give it a few secs for service to start
 ~/basic_test.sh
 SCRIPT
 

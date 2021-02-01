@@ -118,6 +118,28 @@ grep --quiet -E 'Dequeued /attic/motion' ${TMP_OUTPUT} || \
 grep --quiet -E 'Dequeued all entries' ${TMP_OUTPUT} || \
   { echo "FAILED in $0 line ${LINENO}" >&2; exit ${LINENO}; }
 
+echo TEST: Check time restrictions -- positive case
+for tc in on_enabled_before  on_enabled_after  on_enabled_between \
+          on_disabled_before on_disabled_after on_disabled_between combo_on_enabled; do \
+  mosquitto_pub -h ${MQTT_BROKER} -t /positive/${tc} -m "on"
+  get_log_lines 1
+  grep --quiet -E "Publishing /positive/${tc} as current_active_topic" ${TMP_OUTPUT} || \
+    { echo "FAILED in $0 line ${LINENO}" >&2; exit ${LINENO}; }
+  mosquitto_pub -h ${MQTT_BROKER} -t /positive/${tc} -m "off"
+  get_log_lines 1
+  grep --quiet -E "Unpublishing /positive/${tc} as current_active_topic" ${TMP_OUTPUT} || \
+    { echo "FAILED in $0 line ${LINENO}" >&2; exit ${LINENO}; }
+done
+
+echo TEST: Check time restrictions -- negative case
+for tc in on_enabled_before  on_enabled_after  on_enabled_between \
+          on_disabled_before on_disabled_after on_disabled_between combo_on_disabled; do \
+  mosquitto_pub -h ${MQTT_BROKER} -t /negative/${tc} -m "on"
+  get_log_lines 1
+  grep --quiet -E "Ignoring _on_ event for /negative/${tc} due to time restriction" ${TMP_OUTPUT} || \
+    { echo "FAILED in $0 line ${LINENO}" >&2; exit ${LINENO}; }
+done
+
 echo 'PASSED: Happy happy, joy joy!'
 rm -f ${TMP_OUTPUT}
 exit 0

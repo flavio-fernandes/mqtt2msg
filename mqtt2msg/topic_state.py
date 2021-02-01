@@ -2,6 +2,8 @@
 from collections import namedtuple
 from enum import Enum
 
+import dateparser
+
 from mqtt2msg import const
 from mqtt2msg import log
 
@@ -128,12 +130,16 @@ States = {
     TopicStatesEnum.STATE_ACTIVE: StateActive(),
 }
 
+TimeConstraint = namedtuple("TimeConstraint", "hour minute second")
+
+TimeConstraintRange = namedtuple("TimeConstraintRange", "start stop")
+
 
 class TopicState(StateMachine):
     def __init__(
         self,
         topic,
-        msg,
+        msg=None,
         msg_topic=None,
         priority=const.DEFAULT_PRIORITY,
         expiration=None,
@@ -141,11 +147,17 @@ class TopicState(StateMachine):
         off=None,
         on_high_water=None,
         off_low_water=None,
+        on_enabled_after=None,
+        on_enabled_before=None,
+        on_enabled_between=None,
+        on_disabled_after=None,
+        on_disabled_before=None,
+        on_disabled_between=None,
     ):
         # Initial state
         super().__init__(States[TopicStatesEnum.STATE_INACTIVE])
         self.topic = topic
-        self.msg = msg
+        self.msg = msg or topic
         self.msg_topic = msg_topic
         self.priority = int(priority)
         self.expiration = int(expiration) if expiration else None
@@ -153,10 +165,14 @@ class TopicState(StateMachine):
         self.off = self._parse_on_off(off, "off")
         self.on_high_water = float(on_high_water) if on_high_water is not None else None
         self.off_low_water = float(off_low_water) if off_low_water is not None else None
+        self.on_enabled_after = self._parse_date(topic, on_enabled_after)
+        self.on_enabled_before = self._parse_date(topic, on_enabled_before)
+        self.on_enabled_between = self._parse_date_range(topic, on_enabled_between)
+        self.on_disabled_after = self._parse_date(topic, on_disabled_after)
+        self.on_disabled_before = self._parse_date(topic, on_disabled_before)
+        self.on_disabled_between = self._parse_date_range(topic, on_disabled_between)
 
         # Sanity checks
-        if not self.msg:
-            raise RuntimeError(f"{topic}: msg attribute provided is not valid")
         if not self.topic:
             raise RuntimeError("topic attribute provided is not okay")
         if not any((self.on, self.on_high_water)):
@@ -178,3 +194,27 @@ class TopicState(StateMachine):
         if isinstance(value, list):
             return frozenset(value)
         return frozenset({value})
+
+    @staticmethod
+    def _parse_date(topic, value):
+        if not value:
+            return None
+        parsed_value = dateparser.parse(value)
+        if not parsed_value:
+            # Try giving it a TZ to make it happy?
+            # https://dateparser.readthedocs.io/en/latest/settings.html
+            parsed_value = dateparser.parse(value, settings={"TIMEZONE": "UTC"})
+        if not parsed_value:
+            raise RuntimeError(f"{topic}: sad panda while trying to parse {value}")
+        return TimeConstraint(
+            parsed_value.hour, parsed_value.minute, parsed_value.second
+        )
+
+    @classmethod
+    def _parse_date_range(cls, topic, value):
+        if not value:
+            return None
+        start, stop = value.split(",")
+        return TimeConstraintRange(
+            cls._parse_date(topic, start.strip()), cls._parse_date(topic, stop.strip())
+        )

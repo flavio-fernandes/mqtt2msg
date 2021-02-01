@@ -1,3 +1,4 @@
 asyncio-mqtt
+dateparser
 paho-mqtt
 pyyaml>=3.11

@@ -5,13 +5,20 @@ import collections
 import datetime as dt
 import heapq
 import json
+import operator
 import random
 from abc import ABC, abstractmethod
 from typing import Optional
 
 from mqtt2msg import log
 from mqtt2msg.config import Cfg
-from mqtt2msg.topic_state import TopicAction, TopicEvent, TopicState
+from mqtt2msg.topic_state import (
+    TimeConstraint,
+    TimeConstraintRange,
+    TopicAction,
+    TopicEvent,
+    TopicState,
+)
 
 logger = log.getLogger()
 
@@ -141,6 +148,52 @@ class JobMqttMsg(Job):
         super().__init__(topic)
         self.payload = payload
 
+    @classmethod
+    def _ts_from_time_constraint_range(
+        cls, now: dt.datetime, time_constraint_range: Optional[TimeConstraintRange]
+    ) -> Optional[tuple]:
+        if not time_constraint_range:
+            return None
+        return (
+            cls._ts_from_time_constraint(now, time_constraint_range.start),
+            cls._ts_from_time_constraint(now, time_constraint_range.stop),
+        )
+
+    @classmethod
+    def _ts_from_time_constraint(
+        cls, now: dt.datetime, time_constraint: Optional[TimeConstraint]
+    ) -> Optional[dt.datetime]:
+        return (
+            now.replace(
+                hour=time_constraint.hour,
+                minute=time_constraint.minute,
+                second=time_constraint.second,
+                microsecond=0,
+            )
+            if time_constraint
+            else None
+        )
+
+    @staticmethod
+    def _time_restricted(
+        now: dt.datetime, oper: operator, ts: Optional[dt.datetime], is_disable: bool
+    ) -> bool:
+        # Goal: return true if and only if we want to ignore the 'on' event.
+        if not ts:
+            return False  # not restricted
+        is_restricted = oper(now, ts)
+        return is_restricted if is_disable else not is_restricted
+
+    @staticmethod
+    def _time_restricted_range(
+        now: dt.datetime, tss: Optional[tuple], is_disable: bool
+    ) -> bool:
+        # Goal: return true if and only if we want to ignore the 'on' event.
+        if not tss:
+            return False  # not restricted
+        is_restricted = now >= tss[0] and now <= tss[1]
+        return is_restricted if is_disable else not is_restricted
+
     async def handle_job(
         self, run_state: RunState, events_q: asyncio.Queue, mqtt_send_q: asyncio.Queue
     ):
@@ -172,6 +225,58 @@ class JobMqttMsg(Job):
             stm_event = TopicEvent.off
         else:
             return
+
+        if stm_event == TopicEvent.on and any(
+            (
+                topic_state.on_enabled_before,
+                topic_state.on_enabled_after,
+                topic_state.on_enabled_between,
+                topic_state.on_disabled_before,
+                topic_state.on_disabled_after,
+                topic_state.on_disabled_between,
+            )
+        ):
+            now = dt.datetime.now()
+            enabled_before = self._ts_from_time_constraint(
+                now, topic_state.on_enabled_before
+            )
+            enabled_after = self._ts_from_time_constraint(
+                now, topic_state.on_enabled_after
+            )
+            enabled_between = self._ts_from_time_constraint_range(
+                now, topic_state.on_enabled_between
+            )
+            disabled_before = self._ts_from_time_constraint(
+                now, topic_state.on_disabled_before
+            )
+            disabled_after = self._ts_from_time_constraint(
+                now, topic_state.on_disabled_after
+            )
+            disabled_between = self._ts_from_time_constraint_range(
+                now, topic_state.on_disabled_between
+            )
+            if any(
+                (
+                    self._time_restricted(
+                        now, operator.lt, enabled_before, is_disable=False
+                    ),
+                    self._time_restricted(
+                        now, operator.gt, enabled_after, is_disable=False
+                    ),
+                    self._time_restricted_range(now, enabled_between, is_disable=False),
+                    self._time_restricted(
+                        now, operator.le, disabled_before, is_disable=True
+                    ),
+                    self._time_restricted(
+                        now, operator.ge, disabled_after, is_disable=True
+                    ),
+                    self._time_restricted_range(now, disabled_between, is_disable=True),
+                )
+            ):
+                logger.info(
+                    f"Ignoring _on_ event for {self.topic} due to time restriction"
+                )
+                return
 
         for action in topic_state.handle_event(stm_event):
             await events_q.put(_alloc_job(action, self.topic))
