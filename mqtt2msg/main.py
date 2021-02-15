@@ -100,71 +100,83 @@ async def cancel_tasks(tasks):
             pass
 
 
-async def main():
+async def main_loop():
     global stop_gracefully
 
     # https://pypi.org/project/asyncio-mqtt/
     logger.debug("Starting main event processing loop")
-    # try:
-    if True:
-        cfg = Cfg()
-        mqtt_broker_ip = cfg.mqtt_host or const.MQTT_DEFAULT_BROKER_IP
-        mqtt_client_id = cfg.mqtt_client_id or const.MQTT_CLIENT_ID_DEFAULT
-        mqtt_send_q = asyncio.Queue(maxsize=256)
-        events_q = asyncio.Queue(maxsize=256)
+    cfg = Cfg()
+    mqtt_broker_ip = cfg.mqtt_host or const.MQTT_DEFAULT_BROKER_IP
+    mqtt_client_id = cfg.mqtt_client_id or const.MQTT_CLIENT_ID_DEFAULT
+    mqtt_send_q = asyncio.Queue(maxsize=256)
+    events_q = asyncio.Queue(maxsize=256)
 
-        # We 💛 context managers. Let's create a stack to help
-        # us manage them.
-        async with AsyncExitStack() as stack:
-            # Keep track of the asyncio tasks that we create, so that
-            # we can cancel them on exit
-            tasks = set()
-            stack.push_async_callback(cancel_tasks, tasks)
+    # We 💛 context managers. Let's create a stack to help
+    # us manage them.
+    async with AsyncExitStack() as stack:
+        # Keep track of the asyncio tasks that we create, so that
+        # we can cancel them on exit
+        tasks = set()
+        stack.push_async_callback(cancel_tasks, tasks)
 
-            # Connect to the MQTT broker
-            client = Client(mqtt_broker_ip, client_id=mqtt_client_id)
-            await stack.enter_async_context(client)
+        # Connect to the MQTT broker
+        client = Client(mqtt_broker_ip, client_id=mqtt_client_id)
+        await stack.enter_async_context(client)
 
-            messages = await stack.enter_async_context(client.unfiltered_messages())
-            task = asyncio.create_task(handle_mqtt_messages(messages, events_q))
-            tasks.add(task)
+        messages = await stack.enter_async_context(client.unfiltered_messages())
+        task = asyncio.create_task(handle_mqtt_messages(messages, events_q))
+        tasks.add(task)
 
-            run_state = RunState()
-            for topic, attrs in cfg.topics.items():
-                run_state.states[topic] = TopicState(topic, **attrs)
-                await client.subscribe(topic)
+        run_state = RunState()
+        for topic, attrs in cfg.topics.items():
+            run_state.states[topic] = TopicState(topic, **attrs)
+            await client.subscribe(topic)
 
-            task = asyncio.create_task(handle_mqtt_publish(client, mqtt_send_q))
-            tasks.add(task)
+        task = asyncio.create_task(handle_mqtt_publish(client, mqtt_send_q))
+        tasks.add(task)
 
-            task = asyncio.create_task(periodic_timer_refresh_publish(events_q))
-            tasks.add(task)
+        task = asyncio.create_task(periodic_timer_refresh_publish(events_q))
+        tasks.add(task)
 
-            task = asyncio.create_task(periodic_timer_expirations(events_q))
-            tasks.add(task)
+        task = asyncio.create_task(periodic_timer_expirations(events_q))
+        tasks.add(task)
 
-            task = asyncio.create_task(periodic_timer_reelection(events_q))
-            tasks.add(task)
+        task = asyncio.create_task(periodic_timer_reelection(events_q))
+        tasks.add(task)
 
-            task = asyncio.create_task(handle_jobs(run_state, events_q, mqtt_send_q))
-            tasks.add(task)
+        task = asyncio.create_task(handle_jobs(run_state, events_q, mqtt_send_q))
+        tasks.add(task)
 
-            # Wait for everything to complete (or fail due to, e.g., network errors)
-            await asyncio.gather(*tasks)
-            # while not stop_gracefully:
-            #     await asyncio.sleep(5)
+        # Wait for everything to complete (or fail due to, e.g., network errors)
+        await asyncio.gather(*tasks)
 
-        logger.debug("all done!")
-
-    try:
-        pass
-    except Exception as e:
-        logger.error(f"Unexpected event: {e}")
+    logger.debug("all done!")
 
 
 # cfg_globals
 stop_gracefully = False
 logger = None
+
+
+async def main():
+    global stop_gracefully
+
+    # Run the advanced_example indefinitely. Reconnect automatically
+    # if the connection is lost.
+    reconnect_interval = Cfg().reconnect_interval
+    while not stop_gracefully:
+        try:
+            await main_loop()
+        except MqttError as error:
+            logger.warning(
+                f'MQTT error "{error}". Reconnecting in {reconnect_interval} seconds.'
+            )
+        except (KeyboardInterrupt, SystemExit):
+            logger.info("got KeyboardInterrupt")
+            stop_gracefully = True
+            break
+        await asyncio.sleep(reconnect_interval)
+
 
 if __name__ == "__main__":
     logger = log.getLogger()

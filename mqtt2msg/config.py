@@ -34,6 +34,13 @@ class Cfg(object):
         return const.MQTT_CLIENT_ID_DEFAULT
 
     @property
+    def reconnect_interval(self):
+        attr = self._get_info().mqtt
+        if isinstance(attr, collections.abc.Mapping):
+            return attr.get("reconnect_interval", const.MQTT_DEFAULT_RECONNECT_INTERVAL)
+        return const.MQTT_DEFAULT_RECONNECT_INTERVAL
+
+    @property
     def mqtt_message_topic(self):
         attr = self._get_info().mqtt
         if isinstance(attr, collections.abc.Mapping):
