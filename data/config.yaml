@@ -15,21 +15,22 @@ mqtt:
 topics:
     /motion/garage:
         msg: 'there is motion in the garage'
-        # the payload value in order to enqueue this message.
-        # can me a list. Use '' to override default, which is 'on'.
-        # So, 'on' is same as null, and not to be confused with ''.
-        # 'on': null
-        # number of seconds to wait until automatically expiring
+        # The payload value in order to enqueue this message.
+        # Can be a list. Default is 'on'. Use '' to disable.
+        # Note: on: null != on: ''
+        # 'on': ''
+        # Number of seconds to wait until automatically expiring.
+        # use "0" to disable expiration.
         expiration: 20
-        # the payload that triggers message to expire explicitly.
-        # kinda like 'on', but the opposite. :)
+        # The payload that triggers message to expire explicitly.
+        # Kinda like 'on', but the opposite. :)
         'off': ['off', 'gone fishing']
         # low and high watermark float values that can be used as on/off
         on_high_water: 66.6
         off_low_water: -7
         # For time restrictions, use the following attributes. Their
         # union will determine when 'on' events get accepted.
-        # note that these do not span a day. They only extract hh:mm:ss
+        # Note that these do not span a day. They only extract hh:mm:ss
         #on_enabled_before: in 1 hour
         #on_enabled_after: now
         on_disabled_before: 9:00 am

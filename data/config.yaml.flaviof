@@ -11,12 +11,10 @@ knobs:
 mqtt:
     host: 192.168.10.238
 topics:
-    /basement_clock/light_sensor:
+    /basementoffice/light_switch:
         msg: 'basemnt light'
         priority: 110
-        expiration: 1800
-        on_high_water: 195
-        off_low_water: 99
+        expiration: 0
     /garage/light:
         msg: 'garage light'
         priority: 110
@@ -26,6 +24,16 @@ topics:
         # because we cannot tell if light is on or
         # it is just bright in there...
         on_disabled_between: 8 am, 5:15 pm
+    /garage_door/zetsu:
+        msg: 'garage zetsu'
+        priority: 98
+        'on': 'open'
+        'off': 'closed'
+    /garage_door/zelda:
+        msg: 'garage zelda'
+        priority: 98
+        'on': 'open'
+        'off': 'closed'
     /attic/light:
         msg: 'attic light'
         priority: 110
