@@ -1,4 +1,4 @@
-asyncio-mqtt
+aiomqtt>=2.0.0
 dateparser
-paho-mqtt<2
+paho-mqtt
 pyyaml>=3.11

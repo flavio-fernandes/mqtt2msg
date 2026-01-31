@@ -3,7 +3,7 @@ import asyncio
 import collections
 from contextlib import AsyncExitStack
 
-from asyncio_mqtt import Client, MqttError
+from aiomqtt import Client, MqttError
 
 from mqtt2msg import const
 from mqtt2msg import log
@@ -76,16 +76,24 @@ async def handle_mqtt_publish(client, send_q: asyncio.Queue):
         await asyncio.sleep(1)
 
 
-async def handle_mqtt_messages(messages, events_q: asyncio.Queue):
+async def handle_mqtt_messages(message_iter, events_q: asyncio.Queue):
     try:
-        async for message in messages:
-            msg_topic = message.topic
-            msg_payload = message.payload.decode()
+        async for message in message_iter:
+            # aiomqtt Message.topic is a Topic object; string value is .value
+            topic_obj = message.topic
+            msg_topic = getattr(topic_obj, "value", str(topic_obj))
+
+            payload = message.payload
+            if isinstance(payload, (bytes, bytearray)):
+                msg_payload = payload.decode(errors="replace")
+            else:
+                msg_payload = str(payload)
+
             logger.debug(f"Received mqtt topic:{msg_topic} payload:{msg_payload}")
             await events_q.put(JobMqttMsg(msg_topic, msg_payload))
     except MqttError as e:
         if not stop_gracefully:
-            raise e
+            raise
 
 
 async def cancel_tasks(tasks):
@@ -120,11 +128,10 @@ async def main_loop():
         stack.push_async_callback(cancel_tasks, tasks)
 
         # Connect to the MQTT broker
-        client = Client(mqtt_broker_ip, client_id=mqtt_client_id)
+        client = Client(mqtt_broker_ip, identifier=mqtt_client_id)
         await stack.enter_async_context(client)
 
-        messages = await stack.enter_async_context(client.unfiltered_messages())
-        task = asyncio.create_task(handle_mqtt_messages(messages, events_q))
+        task = asyncio.create_task(handle_mqtt_messages(client.messages, events_q))
         tasks.add(task)
 
         run_state = RunState()
